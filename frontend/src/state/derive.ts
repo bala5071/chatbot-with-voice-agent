@@ -1,5 +1,5 @@
 import type { Quality, Route, TenantEntry, TenantUsage } from "../api/types";
-import type { AssistantMessage } from "./chat";
+import type { AssistantMessage, Message } from "./chat";
 
 /** Nearest-rank percentile, the method the gateway uses; null for no values. */
 export function percentile(values: readonly number[], p: number): number | null {
@@ -81,6 +81,7 @@ export function errorHeadline(code: string, status: number | null | undefined): 
   const headlines: Record<string, string> = {
     model_not_in_plan: "Not in this tenant's plan",
     unknown_tenant: "Unknown tenant",
+    invalid_request: "Not accepted",
     budget_exhausted: "Token budget used up",
     queue_full: "Model overloaded",
     request_timeout: "The model took too long",
@@ -93,6 +94,38 @@ export function errorHeadline(code: string, status: number | null | undefined): 
   };
   const headline = headlines[code] ?? "Request failed";
   return status ? `${headline} (HTTP ${status})` : headline;
+}
+
+/** The longest message the chat backend accepts. */
+export const MAX_MESSAGE_CHARS = 8000;
+
+/**
+ * The user messages sent as a different tenant from the message before them. The backend
+ * keeps each tenant's history apart, so the page marks where a new tenant's history starts.
+ */
+export function tenantSwitches(messages: readonly Message[]): Set<string> {
+  const switches = new Set<string>();
+  let previous: string | null = null;
+  for (const message of messages) {
+    if (message.role === "user" && previous !== null && message.tenantId !== previous) {
+      switches.add(message.id);
+    }
+    previous = message.tenantId;
+  }
+  return switches;
+}
+
+/** A readable line for a request the chat backend itself rejected (FastAPI's 422 detail). */
+export function rejectionMessage(detail: unknown): string {
+  const fallback = "The chat backend rejected the request.";
+  if (!Array.isArray(detail) || detail.length === 0) return fallback;
+  return detail
+    .map((item: unknown) => {
+      const { loc, msg } = (item ?? {}) as { loc?: unknown; msg?: unknown };
+      const field = Array.isArray(loc) && loc.length > 0 ? String(loc.at(-1)) : "request";
+      return `${field}: ${typeof msg === "string" ? msg : "invalid"}`;
+    })
+    .join("; ");
 }
 
 const QUALITIES: readonly Quality[] = ["cheapest", "balanced", "best"];

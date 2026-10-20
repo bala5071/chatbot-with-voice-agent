@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
 import type { ChatRequest } from "./api/types";
@@ -87,5 +87,33 @@ describe("App", () => {
     expect(alert).toHaveTextContent("Not in this tenant's plan (HTTP 403)");
     expect(requests[0]).toMatchObject({ tenant_id: "initech", model: "premium" });
     expect(requests[0]).not.toHaveProperty("quality");
+  });
+
+  it("marks where another tenant's history starts", async () => {
+    stubBackend(() => sse([["done", reply()]]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    const box = screen.getByRole("textbox", { name: "Message" });
+    await user.click(await screen.findByRole("radio", { name: /initech/ }));
+    await user.type(box, "One{Enter}");
+    await screen.findByRole("article", { name: "Reply" });
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: /acme/ }));
+    await user.type(box, "Two{Enter}");
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent("Now as acme, which has its own history");
+  });
+
+  it("caps a message at the length the backend accepts and counts down to it", () => {
+    stubBackend(() => sse([["done", reply()]]));
+    render(<App />);
+
+    const box = screen.getByRole("textbox", { name: "Message" });
+    expect(box).toHaveAttribute("maxlength", "8000");
+    expect(screen.queryByText(/\/ 8,000/)).not.toBeInTheDocument();
+    fireEvent.change(box, { target: { value: "x".repeat(7500) } });
+    expect(screen.getByText("7,500 / 8,000")).toBeInTheDocument();
   });
 });

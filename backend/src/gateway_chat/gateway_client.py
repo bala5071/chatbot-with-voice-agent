@@ -79,7 +79,7 @@ class SseParser:
 
 class GatewayUnavailableError(Exception):
     def __init__(self, url: str, reason: str) -> None:
-        super().__init__(f"Could not reach the gateway at {url}: {reason}")
+        super().__init__(f"Could not connect to the gateway at {url}. {reason}")
         self.url = url
 
 
@@ -110,7 +110,9 @@ class GatewayClient:
         try:
             response = await self._http.get(path)
         except httpx.HTTPError as exc:
-            raise GatewayUnavailableError(self.url, type(exc).__name__) from exc
+            if isinstance(exc, httpx.ConnectError):
+                raise GatewayUnavailableError(self.url, "Is it running?") from exc
+            raise GatewayUnavailableError(self.url, f"{type(exc).__name__}.") from exc
         try:
             return response.status_code, response.json()
         except ValueError:

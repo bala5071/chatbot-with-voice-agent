@@ -1,3 +1,4 @@
+import { rejectionMessage } from "../state/derive";
 import { createSseParser, decodeChatEvent } from "./sse";
 import type { ChatEvent, ChatRequest, GatewayError, Health, TenantEntry } from "./types";
 
@@ -9,7 +10,7 @@ async function errorOf(response: Response): Promise<GatewayError> {
     if (body.detail !== undefined) {
       return {
         code: "invalid_request",
-        message: "The chat backend rejected the request.",
+        message: rejectionMessage(body.detail),
         status: response.status,
         detail: body.detail,
       };

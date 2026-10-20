@@ -8,8 +8,10 @@ import {
   knownModels,
   newId,
   percentile,
+  rejectionMessage,
   routeFromValue,
   routeValue,
+  tenantSwitches,
   turnStats,
 } from "./derive";
 
@@ -117,4 +119,54 @@ it("makes ids the backend accepts", () => {
   const a = newId("conv");
   expect(a).toMatch(/^[A-Za-z0-9_-]+$/);
   expect(newId("conv")).not.toBe(a);
+});
+
+describe("tenantSwitches", () => {
+  const user = (id: string, tenantId: string) => ({
+    id,
+    role: "user" as const,
+    text: "",
+    tenantId,
+  });
+  const answer = (id: string, tenantId: string): AssistantMessage => ({
+    ...message(),
+    id,
+    tenantId,
+  });
+
+  it("marks the user messages sent as another tenant than the one before", () => {
+    const messages = [
+      user("u1", "initech"),
+      answer("r1", "initech"),
+      user("u2", "initech"),
+      answer("r2", "initech"),
+      user("u3", "acme"),
+      answer("r3", "acme"),
+      user("u4", "initech"),
+    ];
+    expect([...tenantSwitches(messages)]).toEqual(["u3", "u4"]);
+  });
+
+  it("marks nothing in a one-tenant conversation", () => {
+    expect(tenantSwitches([user("u1", "acme"), answer("r1", "acme")]).size).toBe(0);
+    expect(tenantSwitches([]).size).toBe(0);
+  });
+});
+
+describe("rejectionMessage", () => {
+  it("names the field and the reason", () => {
+    const detail = [
+      {
+        type: "string_too_long",
+        loc: ["body", "message"],
+        msg: "String should have at most 8000 characters",
+      },
+    ];
+    expect(rejectionMessage(detail)).toBe("message: String should have at most 8000 characters");
+  });
+
+  it("falls back when the detail is not a list", () => {
+    expect(rejectionMessage("nope")).toBe("The chat backend rejected the request.");
+    expect(rejectionMessage([])).toBe("The chat backend rejected the request.");
+  });
 });

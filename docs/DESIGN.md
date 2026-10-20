@@ -18,7 +18,7 @@ The browser could not call the gateway directly, for two reasons:
   hold the conversation.
 
 The chat backend (FastAPI) does both jobs. It keeps each conversation in memory, keyed by
-an id the browser picks, and relays the gateway's stream to the browser as server-sent
+the tenant and an id the browser picks, and relays the gateway's stream to the browser as server-sent
 events: `start` (the model the gateway chose, from its `X-Model-Used` and
 `X-Downgraded-From` headers), `token`, then `done` (the gateway's response, unchanged) or
 `error`.
@@ -34,6 +34,12 @@ then the new message. The oldest exchange is dropped first, user turn and reply 
 until the prompt fits in `CHAT_HISTORY_CHARS`. With the gateway's `endpoint: chat` setting
 the whole string reaches the model as one user message, so it is worded as an instruction
 ("Reply to the user's latest message") rather than as a transcript for the model to continue.
+
+History belongs to a tenant. Switching tenant in the middle of a thread starts that tenant's
+own history, and the page marks the point with a divider. The first version keyed history by
+conversation id alone, so a tenant picked mid-thread saw the previous tenant's turns: a data
+leak between customers, and it spoiled the side-by-side comparison (the 8B model answered
+"you've already read them"). Testing against the real models caught it.
 
 Only finished turns are remembered. A stopped or failed reply is not sent back as history.
 

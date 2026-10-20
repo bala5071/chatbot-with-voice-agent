@@ -133,7 +133,7 @@ def create_app(settings: Settings, http: httpx.AsyncClient | None = None) -> Fas
         Every outcome, including the gateway refusing the request, is an event in a 200
         stream, so the browser has one code path. `error` carries the gateway's status.
         """
-        history = store.history(body.conversation_id)
+        history = store.history(body.tenant_id, body.conversation_id)
         prompt = build_prompt(settings.system_prompt, history, body.message, settings.history_chars)
         request: dict[str, Any] = {
             "tenant_id": body.tenant_id,
@@ -165,6 +165,7 @@ def create_app(settings: Settings, http: httpx.AsyncClient | None = None) -> Fas
                         )
                     elif isinstance(event, Done):
                         store.append(
+                            body.tenant_id,
                             body.conversation_id,
                             Turn("user", body.message),
                             Turn("assistant", str(event.reply.get("text", ""))),

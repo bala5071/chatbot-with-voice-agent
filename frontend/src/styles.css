@@ -360,6 +360,22 @@ button.stop {
   background: var(--bg);
 }
 
+.composer .count {
+  align-self: center;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.tenant-switch {
+  align-self: stretch;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 0.5rem;
+}
+
 @media (max-width: 760px) {
   .app {
     height: auto;

@@ -1,7 +1,14 @@
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import type { AssistantMessage, Message } from "../state/chat";
 import type { TurnStats as Stats } from "../state/derive";
-import { errorHeadline, formatCount, formatMs, formatUsd, turnStats } from "../state/derive";
+import {
+  errorHeadline,
+  formatCount,
+  formatMs,
+  formatUsd,
+  tenantSwitches,
+  turnStats,
+} from "../state/derive";
 
 function TurnStats(props: { stats: Stats }) {
   const { stats } = props;
@@ -93,13 +100,22 @@ export function MessageList(props: { messages: Message[] }) {
       </div>
     );
   }
+  const switches = tenantSwitches(props.messages);
   return (
     <div className="messages" aria-live="polite">
       {props.messages.map((message) =>
         message.role === "user" ? (
-          <article key={message.id} className="message user" aria-label="You">
-            <div className="message-text">{message.text}</div>
-          </article>
+          <Fragment key={message.id}>
+            {switches.has(message.id) && (
+              <p className="tenant-switch" role="note">
+                Now as <strong>{message.tenantId}</strong>, which has its own history: it does not
+                see the turns above from other tenants.
+              </p>
+            )}
+            <article className="message user" aria-label="You">
+              <div className="message-text">{message.text}</div>
+            </article>
+          </Fragment>
         ) : (
           <Reply key={message.id} message={message} />
         ),

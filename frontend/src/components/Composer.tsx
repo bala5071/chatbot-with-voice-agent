@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { MAX_MESSAGE_CHARS } from "../state/derive";
+
+// Show how much room is left once a message gets this close to the limit.
+const COUNT_FROM = MAX_MESSAGE_CHARS - 1000;
 
 export function Composer(props: {
   busy: boolean;
@@ -27,6 +31,8 @@ export function Composer(props: {
         aria-label="Message"
         placeholder="Type a message. Enter sends, Shift+Enter starts a new line."
         rows={2}
+        maxLength={MAX_MESSAGE_CHARS}
+        aria-describedby={text.length >= COUNT_FROM ? "message-count" : undefined}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -38,6 +44,11 @@ export function Composer(props: {
           }
         }}
       />
+      {text.length >= COUNT_FROM && (
+        <span id="message-count" className="count muted">
+          {text.length.toLocaleString("en-US")} / {MAX_MESSAGE_CHARS.toLocaleString("en-US")}
+        </span>
+      )}
       {props.busy ? (
         <button type="button" className="stop" onClick={props.onStop}>
           Stop

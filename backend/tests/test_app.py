@@ -48,6 +48,16 @@ async def test_history_goes_into_the_next_prompt(rig: Rig) -> None:
     assert "Ada" not in third
 
 
+async def test_another_tenant_does_not_see_the_history(rig: Rig) -> None:
+    """The same conversation id, switched to another tenant mid-thread."""
+    await rig.chat(tenant_id="initech", message="My name is Ada.")
+    await rig.chat(tenant_id="acme", message="What is my name?")
+    await rig.chat(tenant_id="initech", message="And again?")
+    _, acme, initech_again = (r["prompt"] for r in rig.gateway_requests)
+    assert "Ada" not in acme
+    assert "My name is Ada." in initech_again
+
+
 async def test_a_failed_turn_is_not_remembered(rig: Rig) -> None:
     events = await rig.chat(message="[[fail-mid]]")
     assert names(events)[-1] == "error"
