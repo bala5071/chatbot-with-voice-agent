@@ -16,3 +16,6 @@ frontend/e2e/results/
 .vscode/
 .idea/
 .DS_Store
+
+# Logs from scripts/demo.ps1
+.run/

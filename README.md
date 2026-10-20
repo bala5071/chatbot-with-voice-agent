@@ -1,4 +1,4 @@
-# inference-gateway-chat
+# chatbot-with-voice-agent
 
 A multi-tenant chatbot whose every message goes through the
 [Multi-Model Inference Gateway](https://github.com/bala5071/Multi-Model-Inference-Gateway-Simulator).
@@ -43,6 +43,20 @@ The browser talks to the chat backend, not to the gateway, because the gateway s
 CORS headers and takes a single prompt string per request. So the backend keeps each
 conversation and writes its recent history into the prompt. See [docs/DESIGN.md](docs/DESIGN.md).
 
+## Quick start (Windows)
+
+With the gateway cloned beside this repository and Ollama installed:
+
+```powershell
+.\scripts\demo.ps1            # real models: Ollama + gateway + chat, opens the browser
+.\scripts\demo.ps1 -LiveSim   # also the gateway's simulated live mode on port 8001
+.\scripts\demo.ps1 -Simulated # no models at all
+.\scripts\demo.ps1 -Stop
+```
+
+[docs/DEMO.md](docs/DEMO.md) is a ten-minute script for presenting the gateway with it.
+The steps below do the same by hand, on any OS.
+
 ## Run it
 
 You need Python 3.11+, [uv](https://docs.astral.sh/uv/), Node 20, [Ollama](https://ollama.com),
@@ -51,7 +65,7 @@ and the gateway cloned beside this repository:
 ```
 Projects/
   Multi-Model-Inference-Gateway-Simulator/
-  inference-gateway-chat/
+  chatbot-with-voice-agent/
 ```
 
 1. Pull the three models (about 7.7 GB; their licenses are Meta's, see the gateway's
@@ -65,11 +79,11 @@ Projects/
 2. Start the gateway with this repo's backend config (in the gateway repository):
 
    ```sh
-   GATEWAY_BACKENDS=../inference-gateway-chat/config/backends.ollama-chat.yaml \
+   GATEWAY_BACKENDS=../chatbot-with-voice-agent/config/backends.ollama-chat.yaml \
      uv run uvicorn gateway.app:create_default_app --factory --port 8000
    ```
 
-   In PowerShell: `$env:GATEWAY_BACKENDS="..\inference-gateway-chat\config\backends.ollama-chat.yaml"`
+   In PowerShell: `$env:GATEWAY_BACKENDS="..\chatbot-with-voice-agent\config\backends.ollama-chat.yaml"`
    on its own line first.
 
 3. Start the chat backend (in `backend/`):

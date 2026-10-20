@@ -6,7 +6,7 @@
 #
 #   ollama pull llama3.2:1b-instruct-q4_K_M && ollama pull llama3.2:3b && ollama pull llama3.1:8b
 #   # in the gateway repository
-#   GATEWAY_BACKENDS=../inference-gateway-chat/config/backends.ollama-chat.yaml \
+#   GATEWAY_BACKENDS=../chatbot-with-voice-agent/config/backends.ollama-chat.yaml \
 #     uv run uvicorn gateway.app:create_default_app --factory --port 8000
 #
 # With this backend the gateway uses its PassthroughWorker: Ollama does the batching and
