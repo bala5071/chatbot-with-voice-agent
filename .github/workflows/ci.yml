@@ -70,6 +70,14 @@ jobs:
           uv sync --locked
           uv run pytest -m gateway -v
 
+      # The gateway is still running from the uv environment; stop it before setup-uv's
+      # post step prunes the uv cache.
+      - name: Stop the gateway
+        if: always()
+        run: |
+          pkill -f "gateway.app:create_default_app" || true
+          sleep 2
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
