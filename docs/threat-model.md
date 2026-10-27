@@ -47,9 +47,14 @@ added by the step that changes them.
   then the system prompt is the only safeguard. These misses are listed in
   `tests/test_units.py` (`KNOWN_MISSES`). Like the emergency check, it sees only the
   transcript, so a mis-transcribed request is missed too, and it knows English only.
+- **The medicine names are a sample, not a complete list.** `MEDICAL_PHRASES` names some common
+  medicines (`ibuprofen`, `tylenol`, `amoxicillin` and a few more). A medicine it does not name,
+  asked about without any other trigger word ("Is Calpol okay for a fever?"), goes to the model.
 - **Medical-advice false alarms are accepted on purpose.** "Do you treat children?" and a
-  prescription refill both get the scripted sentence (`KNOWN_FALSE_ALARMS`). The caller is
-  offered an appointment or a callback and has to ask again to reach the model.
+  prescription refill both get the scripted decline (`KNOWN_FALSE_ALARMS`), even though the
+  first is a question about services. The caller hears the decline and an offer of an
+  appointment or a callback that is only words (next entry), and has to ask again to reach the
+  model.
 - **The offer of an appointment or a callback is only words.** The agent books nothing and
   schedules no callback; the caller's next turn goes to the model, which can only take the
   details and say the front desk will call back (`clinic.toml`).

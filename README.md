@@ -29,7 +29,11 @@ Microphone capture, telephony and multi-turn calls are not built yet. See
   or have a clinician call you back?" and never asks the model
   (`docs/05-medical-advice-guard.md`). The check is keyword-based and recall-first: it accepts
   false alarms and will miss unusual phrasing. When it misses, the model is told to answer
-  only receptionist questions, and an instruction to a model is not a guarantee.
+  only receptionist questions, and an instruction to a model is not a guarantee. The medicine
+  names in the list are a sample, not a complete list: a medicine it does not name, asked about
+  without any other trigger word, goes to the model. Some ordinary questions, such as "Do you
+  treat children?", also get the scripted decline, and its offer of an appointment or a
+  callback is only words: the agent books nothing and schedules no callback.
 - **Nothing is stored by default.** The only file written is the `--out` file you ask for. The
   transcript and reply are printed only with `--show-text` and never logged.
 - **Failures are spoken in fixed words.** For example, a 429 from the gateway becomes "We're
