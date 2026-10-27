@@ -59,12 +59,20 @@ async def test_warm_up_never_counts() -> None:
 
     clock = FakeClock()
     warm, chat, tts = build(clock)
-    await warm.warm_up()
+    assert await warm.warm_up() is None
     assert clock.now_ms() > 0  # warm-up took (fake) time
     assert len(chat.calls) == 1  # and exercised every stage
     assert tts.spoken
     result = await warm.turn(UTTERANCE)
     assert result.times == cold_times
+
+
+async def test_a_failed_warm_up_returns_the_error_and_does_not_raise() -> None:
+    clock = FakeClock()
+    failure = Busy(429, "rate_limited")
+    pipeline, chat, _ = build(clock, fail=failure)
+    assert await pipeline.warm_up() is failure
+    assert len(chat.calls) == 1
 
 
 async def test_emergency_is_scripted_and_the_model_is_never_called() -> None:

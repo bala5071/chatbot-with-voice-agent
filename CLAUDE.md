@@ -42,9 +42,11 @@ Modules under `src/voice_agent/` (added step by step):
 - `timing.py` — `Stage`, `StageTimer`: the six stage timestamps on the injected clock.
 - `pipeline.py` — `Pipeline`: warm-up and one push-to-talk turn.
 - `cli.py` — `python -m voice_agent`: audio file in, audio file out.
+- `machine.py` — `hardware()`: this machine's CPU, OS, Python and GPU, for every result.
 
 Outside the package: `models.toml` (pinned model files and hashes), `scripts/fetch_models.py`,
-`scripts/gpu_budget.py`, `scripts/measure_latency.py`, `scripts/check_characters.py`, and
+`scripts/gpu_budget.py`, `scripts/measure_latency.py`, `scripts/check_characters.py`,
+`scripts/demo.py` (five scripted calls through the real pipeline; deletes its temporary folder), and
 `scripts/record_fixtures.py` (the real gateway's answers to fixed synthetic prompts, kept in
 `tests/fixtures/gateway/` with the command and gateway commit, refused if anything in them is
 shaped like a key). Never edit a fixture by hand; record it again.

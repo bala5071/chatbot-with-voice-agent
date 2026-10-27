@@ -72,10 +72,10 @@ class Pipeline:
         self._system = Message("system", system_prompt(clinic))
         self._clock = clock
 
-    async def warm_up(self) -> None:
+    async def warm_up(self) -> SpokenError | None:
         """Load and exercise every stage once. Its timings are thrown away: warm-up never
-        counts. A gateway failure here is logged by type and not raised; the real turn will
-        meet it again and say so."""
+        counts. A gateway failure here is logged by type and returned, not raised; the CLI
+        ignores it (the real turn will meet it again and say so), the demo stops on it."""
         timer = StageTimer(self._clock)
         pcm = b"".join([chunk async for chunk in self._tts.synthesize(WARM_UP_TEXT)])
         await self._stt.transcribe(Audio(pcm, self._tts.sample_rate))
@@ -87,6 +87,8 @@ class Pipeline:
                 pass
         except SpokenError as exc:
             log.warning("warm-up request failed: %s", exc)
+            return exc
+        return None
 
     async def turn(self, utterance: Audio) -> TurnResult:
         timer = StageTimer(self._clock)
