@@ -18,8 +18,6 @@ import argparse
 import asyncio
 import json
 import os
-import platform
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,34 +27,11 @@ from voice_agent.cli import DEFAULT_VOICE, DEFAULT_WHISPER_DIR, build_real
 from voice_agent.clinic import load_clinic
 from voice_agent.clock import WallClock
 from voice_agent.config import ConfigError, Settings
+from voice_agent.machine import hardware
 from voice_agent.pipeline import Outcome, Pipeline
 from voice_agent.timing import Stage
 
 QUESTION = "Hi, what time do you open on Saturday?"
-
-
-def hardware() -> dict[str, Any]:
-    info: dict[str, Any] = {
-        "cpu": platform.processor(),
-        "os": platform.platform(),
-        "python": platform.python_version(),
-        "logical_cpus": os.cpu_count(),
-    }
-    try:
-        out = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=name,driver_version,memory.total",
-                "--format=csv,noheader",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-        info["gpu"] = out
-    except (OSError, subprocess.CalledProcessError):
-        info["gpu"] = None
-    return info
 
 
 async def measure(args: argparse.Namespace, settings: Settings) -> dict[str, Any]:
