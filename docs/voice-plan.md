@@ -228,7 +228,13 @@ against `main`. Requested 2026-10-27.
    shown first. Nothing is added until the user approves it. If approved: exact pins, an
    optional group outside the default dependencies, `docs/licenses.md` marking it proprietary and
    not redistributed, and a `gpu_budget.py` run with Whisper on the GPU and the standard tier.
+
+   **Decided in review: declined.** No NVIDIA package is added. `docs/licenses.md` records the
+   evaluation and quotes the two EULA limitations (open-source licenses, medical use), and the
+   README says why in one paragraph. Whisper stays on the CPU.
 4. **The latency run** waits for the user to say `GATEWAY_API_KEY` is set and the gateway is
    running. Then `scripts/measure_latency.py` gets three measured runs (warm-up excluded) with
-   Whisper on the CPU, and on the GPU if item 3 is done, each labelled one machine. Until then
-   `docs/latency.md` stays empty.
+   Whisper on the CPU, each labelled one machine. Until then `docs/latency.md` stays empty.
+
+**Moved in review:** items 2 (the recordings) and 4 (the latency run) become the next PR from
+`main`. This PR ships the recorder, the replay tests and item 1.

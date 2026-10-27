@@ -60,6 +60,6 @@ in) and Piper `en_US-ljspeech-medium`. Both are pinned by commit and hash in `mo
 fetched by `scripts/fetch_models.py` (`docs/licenses.md`). `av` is pinned to 16.0.1 because
 faster-whisper 1.2.1 calls `av.open` with an argument that av 19 removed.
 
-**GPU.** On the development machine Whisper cannot run on CUDA yet: `ctranslate2` needs
-cuBLAS 12, which is not installed (`docs/gpu-budget.md`). CPU is the default until that is
-decided.
+**GPU.** Whisper runs on the CPU. `ctranslate2` needs NVIDIA's cuBLAS 12 to run it on CUDA,
+and adding cuBLAS 12 was evaluated and declined in step 2 because of its license
+(`docs/licenses.md`).

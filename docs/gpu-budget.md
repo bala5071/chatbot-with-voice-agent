@@ -38,8 +38,8 @@ the CPU** (`--device cpu`, int8, the CLI's default). Measured alone, standard us
 peak and fitted entirely in VRAM. With Whisper on the CPU, the GPU holds only the gateway's model.
 
 This run does not show whether Whisper and standard fit on the GPU together. That needs the
-cuBLAS 12 runtime, which is proprietary NVIDIA software and would be a new dependency, so it has
-not been installed. Premium is not chosen: on this laptop the gateway's own calibration already
+cuBLAS 12 runtime, which is proprietary NVIDIA software; adding it was evaluated and declined
+in step 2 because of its license (`docs/licenses.md`), so this will not be measured here. Premium is not chosen: on this laptop the gateway's own calibration already
 marks it hardware-limited, and this run gives no evidence either way about it sharing the GPU
 with Whisper.
 

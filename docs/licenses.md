@@ -88,9 +88,51 @@ development machine):
 - **`piper-tts`** bundles espeak-ng (`espeakbridge`) and its data, GPL-3.0-or-later.
 - **`onnxruntime`** ships its own DLLs under MIT.
 
-Not bundled, so not installed: CUDA's **cuBLAS 12** (`cublas64_12.dll`), which `ctranslate2`
-needs to run Whisper on an NVIDIA GPU. Without it Whisper runs on the CPU (the default).
-Adding it means a proprietary NVIDIA library, and it is not done without an explicit decision.
+## Evaluated and declined: Whisper on the GPU (NVIDIA cuBLAS 12)
+
+`ctranslate2` needs CUDA's **cuBLAS 12** (`cublas64_12.dll`) to run Whisper on an NVIDIA GPU. It
+is not bundled and **this repository does not install, pin, require or redistribute it**:
+Whisper runs on the CPU. Decided 2026-10-27, in the review of PR #2.
+
+What was evaluated (from PyPI's JSON API and the wheels' own `METADATA` and `License.txt`; nothing
+was installed):
+
+| Package | Version | Windows wheel | SHA-256 | License |
+|---|---|---|---|---|
+| `nvidia-cublas-cu12` | 12.9.2.10 | `py3-none-win_amd64`, 553,162,896 bytes, uploaded 2026-04-08 | `623f43027d40d44ceadf0043f002bd25cf353e8f13ce90b9a87057019f560661` | `LicenseRef-NVIDIA-Proprietary` (NVIDIA CUDA EULA) |
+| `nvidia-cuda-nvrtc-cu12` (required by the first) | 12.9.86 | `py3-none-win_amd64`, 76,408,187 bytes, uploaded 2025-06-05 | `72972ebdcf504d69462d3bcd67e7b81edd25d0fb85a2c46d3ea3517666636349` | the same EULA |
+
+Both are published by the PyPI organization `nvidia` (author "Nvidia CUDA Installer Team",
+project URL https://developer.nvidia.com/cuda-zone). They are proprietary and not open source.
+
+Why it was declined: two limitations in that agreement ("License Agreement for NVIDIA Software
+Development Kits", section 1.2), quoted from the wheel's `License.txt`:
+
+> 5. You may not use the SDK in any manner that would cause it to become subject to an open
+> source software license. As examples, licenses that require as a condition of use,
+> modification, and/or distribution that the SDK be:
+>
+> a. Disclosed or distributed in source code form;
+>
+> b. Licensed for the purpose of making derivative works; or
+>
+> c. Redistributable at no charge.
+
+> 6. Unless you have an agreement with NVIDIA for this purpose, you may not use the SDK with any
+> system or application where the use or failure of the system or application can reasonably be
+> expected to threaten or result in personal injury, death, or catastrophic loss. Examples
+> include use in avionics, navigation, military, medical, life support or other life critical
+> applications. NVIDIA does not design, test or manufacture the SDK for these critical uses and
+> NVIDIA shall not be liable to you or any third party, in whole or in part, for any claims or
+> damages arising from such uses.
+
+This repository is GPL-3.0-or-later and loads GPL code (Piper, espeak-ng) in the same process
+as Whisper (clause 5), and its subject is a clinic's phone line with an emergency path, even
+though the clinic is a mock (clause 6). This is a reading of the text, not legal advice.
+
+The CLI still accepts `--device cuda`; it works only where someone has installed cuBLAS 12
+themselves, under their own acceptance of NVIDIA's terms. No measurement in this repository uses
+it.
 
 ## Models (pinned in `models.toml`, fetched by `scripts/fetch_models.py`)
 
