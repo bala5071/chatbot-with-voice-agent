@@ -116,6 +116,9 @@ These apply to every task without being repeated.
   base is `main`; a PR is never described as ready to merge unless its base is `main`. When a
   base PR merges, retarget the next PR at once (`gh pr edit <n> --base main`), check its CI
   again, and report.
+- Before any push, run `gh pr list --state all --head <branch>` and report the state of any
+  existing PR for that branch (open, draft, merged or closed). A merged or closed PR does not
+  take new commits: open a new PR for them.
 
 **Definition of done** (real output shown, never summarized): ruff, the format check, mypy, the
 full pytest, `scripts/check_characters.py`, and every CI job green.
