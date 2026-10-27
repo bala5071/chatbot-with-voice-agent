@@ -238,3 +238,38 @@ against `main`. Requested 2026-10-27.
 
 **Moved in review:** items 2 (the recordings) and 4 (the latency run) become the next PR from
 `main`. This PR ships the recorder, the replay tests and item 1.
+
+## Step 3: the demo script
+
+Branch `voice/step-3-demo`, from `main` after PR #3 (`5640a4d`), one draft PR against `main`.
+Requested 2026-10-27.
+
+`scripts/demo.py` runs five fixed calls through the real pipeline against the gateway:
+
+1. a question about opening hours (expected path: the model);
+2. a question about the services (the model);
+3. an emergency, "My father is having chest pain and can't breathe." (scripted emergency; the
+   model is never asked);
+4. a request for medical advice, "What dose of ibuprofen should I take?" (the model, which the
+   system prompt tells to stay a receptionist; that is not a guarantee, and the demo shows
+   what it says);
+5. near-silence (scripted no-speech).
+
+- The caller audio is synthesized by Piper (the near-silence is a quiet generated tone) and
+  written as WAVs to a folder made with `tempfile.mkdtemp`. The demo deletes exactly that
+  folder at the end, also on failure.
+- Every stage is warmed up first and the warm-up is not counted. A warm-up that cannot reach the
+  gateway, or whose key is refused, stops the demo with a clear message. A missing key stops it
+  before anything loads. The key is never printed.
+- Per call it prints the transcript, the reply, the path that ran (and the expected one if they
+  differ) and the stage times. At the end: min and max of each stage over the calls, the
+  hardware, the tier asked for, and a line saying these are single demo runs on one machine,
+  not a benchmark.
+- `--play` plays each reply with the OS player, from the temporary folder. `--out DIR` writes
+  each reply WAV and a text file with its transcript and reply. Nothing is written otherwise.
+- To report a failed warm-up, `Pipeline.warm_up` now returns the gateway error instead of only
+  logging it. The CLI ignores the return value, as before.
+- Tests use the fakes and `FakeClock`. Mutation check: with the emergency check removed from
+  the pipeline, the demo's test that the emergency call never reaches the model fails.
+- No real run in this PR unless the user says the gateway is running and the key is set; no
+  number is written.
