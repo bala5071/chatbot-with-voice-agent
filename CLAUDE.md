@@ -13,6 +13,7 @@ not HIPAA compliant. The clinic, its staff, its hours and every caller are made 
 
 Stack: Python 3.11+, asyncio, httpx, pytest, ruff, mypy, uv. Free/open-source tools only. Every
 runtime dependency, model weight and voice is recorded with its license in `docs/licenses.md`.
+The repository is GPL-3.0-or-later because Piper (GPL) runs in the same process.
 
 The plan is `docs/voice-plan.md`. Each step adds a short design note in `docs/NN-<topic>.md`.
 
@@ -20,24 +21,30 @@ The plan is `docs/voice-plan.md`. Each step adds a short design note in `docs/NN
 
 Modules under `src/voice_agent/` (added step by step):
 
-- `clock.py` — `Clock` protocol, `FakeClock` (tests), `WallClock` (the CLI); times are
-  milliseconds. The only module allowed to read real time.
+- `clock.py` — `Clock` protocol, `FakeClock` (tests: time moves only through `advance`),
+  `WallClock` (the CLI); times are milliseconds. The only module allowed to read real time.
 - `secret.py` — `Secret`: the API key, redacted in `repr`, `str` and format; `reveal()` only
-  where the `Authorization` header is built.
-- `config.py` — settings from the environment (`GATEWAY_URL`, `GATEWAY_API_KEY`, model sizes);
-  never a secret in a file.
-- `stt.py`, `tts.py`, `chat.py` — the three interfaces (`SpeechToText`, `TextToSpeech`,
-  `ChatClient`), each with a deterministic fake in `fakes.py`.
-- `engines/` — the real implementations: `faster_whisper.py`, `piper.py`. Imported only by
-  the CLI and scripts, never by logic modules.
-- `gateway_client.py` — `GatewayClient`: the streamed `POST /v1/chat/completions`, and the
-  mapping of failures to `SpokenError` types.
+  in `gateway_client._auth_headers` (an AST test).
+- `config.py` — `Settings` from the environment (`GATEWAY_URL`, `GATEWAY_API_KEY`,
+  `VOICE_MODEL`, timeouts); plain http only to loopback; never a secret in a file.
+- `audio.py` — `Audio` (16-bit mono PCM in memory), WAV in and out.
+- `interfaces.py` — `SpeechToText`, `TextToSpeech`, `ChatClient`, `Message`.
+- `fakes.py` — the deterministic fake of each interface, on `FakeClock`.
+- `engines/` — the real engines: `faster_whisper.py`, `piper.py` (the only module importing
+  Piper). Imported only by the CLI and scripts, never by logic modules.
+- `errors.py` — `SpokenError` and its subclasses, each with fixed spoken text; the status and
+  stream-code mapping.
+- `gateway_client.py` — `GatewayClient`: the streamed `POST /v1/chat/completions`, timeouts on
+  the injected clock.
 - `sentences.py` — splits a streamed reply into sentences for TTS.
 - `safety.py` — the scripted emergency detector and its fixed response.
-- `clinic.py` + `clinic.yaml` — the mock clinic's facts and the system prompt.
-- `timing.py` — `StageTimer`: the six stage timestamps on the injected clock.
-- `pipeline.py` — one push-to-talk turn: audio in, transcript, reply, audio out.
+- `clinic.py` + `clinic.toml` — the mock clinic's facts and the system prompt.
+- `timing.py` — `Stage`, `StageTimer`: the six stage timestamps on the injected clock.
+- `pipeline.py` — `Pipeline`: warm-up and one push-to-talk turn.
 - `cli.py` — `python -m voice_agent`: audio file in, audio file out.
+
+Outside the package: `models.toml` (pinned model files and hashes), `scripts/fetch_models.py`,
+`scripts/gpu_budget.py`, `scripts/measure_latency.py`, `scripts/check_characters.py`.
 
 Rules:
 

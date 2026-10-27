@@ -1,0 +1,28 @@
+# The mock clinic. Every name, number and address here is made up (CLAUDE.md, hard rule 5).
+# 555-01xx numbers are reserved for fiction; example.org is a reserved domain.
+
+name = "Maple Grove Family Clinic (mock)"
+phone = "555-0142"
+address = "100 Example Lane, Springfield"
+website = "maplegrove.example.org"
+
+hours = [
+    "Monday to Friday, 8 a.m. to 6 p.m.",
+    "Saturday, 9 a.m. to 1 p.m.",
+    "Closed on Sunday and public holidays",
+]
+
+services = [
+    "general check-ups",
+    "vaccinations",
+    "travel consultations",
+    "school and sports physicals",
+]
+
+staff = [
+    "Dr. Alex Example, family medicine",
+    "Dr. Sam Sample, pediatrics",
+    "Jordan Placeholder, nurse practitioner",
+]
+
+booking = "The front desk books appointments; the agent takes a name and a preferred day and says the desk will call back to confirm."

@@ -1,0 +1,59 @@
+# The model files this repo downloads, pinned to an exact Hugging Face commit, with the
+# published hash of every file. scripts/fetch_models.py fetches them into models/ (git-ignored)
+# and refuses any file whose hash differs. Licenses: docs/licenses.md.
+#
+# LFS files are checked against the SHA-256 Hugging Face publishes for them. Small non-LFS
+# files have no published SHA-256, so they are checked against their published git blob id
+# (SHA-1 of "blob <size>\0" + content); their SHA-256 is recorded here after that check.
+
+[[model]]
+name = "faster-whisper-small"
+repo = "Systran/faster-whisper-small"
+revision = "536b0662742c02347bc0e980a01041f333bce120"
+license = "MIT"
+
+[[model.file]]
+path = "model.bin"
+size = 483546902
+sha256 = "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671"
+
+[[model.file]]
+path = "config.json"
+size = 2370
+git_blob = "e5047537059bd8f182d9ca64c470201585015187"
+
+[[model.file]]
+path = "tokenizer.json"
+size = 2203239
+git_blob = "7818adb6de9fa3064d3ff81226fdd675be1f6344"
+
+[[model.file]]
+path = "vocabulary.txt"
+size = 459861
+git_blob = "c9074644d9d1205686f16d411564729461324b75"
+
+[[model.file]]
+path = "README.md"
+size = 1998
+git_blob = "16511f6106ead2fbc3a1480957a217c2661a5a98"
+
+[[model]]
+name = "piper-en_US-ljspeech-medium"
+repo = "rhasspy/piper-voices"
+revision = "5041a7a49ae5b3a0f30e6837769eb03fdbb231bd"
+license = "MIT (voice); LJ Speech dataset public domain"
+
+[[model.file]]
+path = "en/en_US/ljspeech/medium/en_US-ljspeech-medium.onnx"
+size = 63531379
+sha256 = "6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22"
+
+[[model.file]]
+path = "en/en_US/ljspeech/medium/en_US-ljspeech-medium.onnx.json"
+size = 4972
+git_blob = "73ecdec4f6ab17a437936652dfe3a925bb19e098"
+
+[[model.file]]
+path = "en/en_US/ljspeech/medium/MODEL_CARD"
+size = 517
+git_blob = "324d7470296a501e3c6396310f9b218fdbd7ed1e"
