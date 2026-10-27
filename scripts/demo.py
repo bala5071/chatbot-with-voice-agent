@@ -110,9 +110,16 @@ def os_player(path: Path) -> None:
             print(f"could not play {path.name}: {type(exc).__name__}", file=sys.stderr)
 
 
-def warm_up_failure(error: SpokenError, url: str) -> str:
+def warm_up_failure(error: SpokenError, url: str, tier: str) -> str:
     if isinstance(error, Unavailable) and error.code == "gateway_unreachable":
         return f"the gateway at {url} could not be reached; is it running?"
+    if isinstance(error, Unavailable) and error.code == "no_local_provider":
+        return (
+            f"the gateway refused the request (HTTP {error.status}, no_local_provider): it "
+            f"treats the model server for tier {tier!r} as hosted (its URL is not loopback "
+            "and is not listed as local), and this application's mode, local_only, refuses "
+            "hosted providers. See the gateway's docs/33-fallback-modes.md."
+        )
     if isinstance(error, NotAuthorized):
         return f"the gateway refused the key (HTTP {error.status}); check GATEWAY_API_KEY"
     return f"the warm-up request to the gateway failed: {error}"
@@ -190,7 +197,7 @@ async def run(
                 inputs.append(path)
             error = await pipeline.warm_up()
             if error is not None:
-                raise DemoError(warm_up_failure(error, settings.gateway_url))
+                raise DemoError(warm_up_failure(error, settings.gateway_url, settings.model))
             results: list[TurnResult] = []
             for index, (call, path) in enumerate(zip(CALLS, inputs, strict=True), 1):
                 result = await pipeline.turn(read_wav(path))

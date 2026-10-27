@@ -20,6 +20,9 @@ for medical advice, and near-silence.
   instead of only logging it. The demo stops on it with one sentence: unreachable, key refused,
   or the error's type, status and code. It never prints the gateway's message or the key. The
   CLI ignores the value, as before. A missing key stops the demo before any model loads.
+  A 503 `no_local_provider` is explained (step 5): the gateway treats that tier's model server
+  as hosted (not loopback, not listed as local), and the mode `local_only` refuses it (the
+  gateway's docs/33).
 - **The path is the pipeline's outcome**, printed with the expected one when they differ, and
   the exit is 1 then. The medical-advice call is expected to reach the model: no rule here
   scripts a refusal. The system prompt asks the model to stay a receptionist, which is not a
