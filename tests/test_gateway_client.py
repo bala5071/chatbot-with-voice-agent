@@ -29,6 +29,7 @@ from voice_agent.errors import (
     TimedOut,
     Unavailable,
 )
+from voice_agent.gateway_client import make_http_client
 
 
 async def test_streams_the_reply_and_sends_the_right_request() -> None:
@@ -193,3 +194,9 @@ async def test_redirects_are_not_followed() -> None:
     with pytest.raises(Misconfigured):
         await collect(make_client(gateway, FakeClock()))
     assert len(gateway.requests) == 1
+
+
+def test_the_http_client_ignores_proxy_settings_and_follows_no_redirects() -> None:
+    client = make_http_client("http://127.0.0.1:8000")
+    assert client.trust_env is False
+    assert client.follow_redirects is False
