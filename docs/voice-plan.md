@@ -273,3 +273,23 @@ Requested 2026-10-27.
   the pipeline, the demo's test that the emergency call never reaches the model fails.
 - No real run in this PR unless the user says the gateway is running and the key is set; no
   number is written.
+
+## Step 4: the scripted medical-advice guard
+
+Branch `voice/step-4-medical-guard`, one draft PR against `main`. Requested 2026-10-27, from
+decision 7 of PR #4.
+
+- `safety.py` gets a second check, `is_medical_advice_request`, on the same normalized
+  transcript. Like the emergency check it is recall-first: fixed phrases and wording families
+  for dosage, medication, diagnosis and treatment.
+- On a match the agent says one fixed sentence: it cannot give medical advice on this line, a
+  clinician can, and it offers an appointment or a callback. The model is never called.
+- The emergency check runs first, so a call that is both gets the emergency sentence.
+- Tests: variants that must trigger, and ordinary requests that must not ("Do you take
+  insurance?", "Can I take the 3pm slot?", "Is the clinic open on Saturday?" and others). False
+  alarms are accepted, and a test lists the known ones. Mutation check: without the guard in
+  the pipeline, the tests that the model is never called fail.
+- The threat model says the guard is keyword-based and will miss unusual phrasing.
+- `scripts/demo.py`: call 4 expects the scripted medical-advice path.
+- After this PR is merged and the user says the gateway is running and the key is set: one
+  demo run against the real gateway, reported per call, with anything unexpected stated plainly.
