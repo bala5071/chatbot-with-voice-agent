@@ -194,3 +194,41 @@ stays empty.
 
 Microphone capture and live push-to-talk, barge-in, telephony, multi-turn memory, appointment
 booking against any system, a web UI, FastAPI, and Docker.
+
+## Step 2: emergency recall, real-gateway fixtures, optional GPU Whisper, the latency run
+
+Branch `voice/step-2-emergency-fixtures`, from `main` after PR #1 (`0d43db2`), one draft PR
+against `main`. Requested 2026-10-27.
+
+1. **Emergency detection, recall first.** A missed emergency is worse than a false alarm,
+   whose cost is one scripted sentence before the caller repeats the request. Matching keeps the
+   fixed phrase list, made more tolerant of how a transcript spells things:
+   - apostrophes are dropped, so `can't` and `cant` are the same words;
+   - `9-1-1`, `9 1 1`, `9.1.1` and `9/11` become `911`, but a time like `9:11` does not;
+   - a few families cover wording a flat list would miss: not being able to breathe, chest pain,
+     bleeding, and too many pills.
+
+   There are tests for the requested variants and for requests that must not trigger. The
+   threat model (`docs/threat-model.md`, new) says that a mis-transcribed emergency is a known
+   gap: the check sees only what Whisper wrote.
+2. **Real-gateway fixtures.** `scripts/record_fixtures.py` records the gateway's streamed answers
+   to fixed synthetic prompts for five cases: text, a tool call, 401, 429, and an in-stream error.
+   - Only the status, `Content-Type`, `Retry-After` and the body are kept, together with the
+     request sent (without its headers), the exact command and the gateway's commit (read with
+     git from the gateway checkout, refused if that checkout has local changes).
+   - Before writing, the recorder refuses any fixture that contains the key or anything shaped
+     like a key, and a test scans every fixture the same way, with a planted control.
+   - `tests/test_gateway_fixtures.py` replays each recorded fixture through the real
+     `GatewayClient`. A case that has not been recorded is skipped with that reason, never faked.
+   - Recording waits for the user to say the gateway is running. A tool call needs a tier served
+     by a real model (the simulator's tiers have none). An error after output has started cannot
+     be provoked on demand (the gateway's timeouts are fixed at 30 s and 120 s), so the recorder
+     says so if it was not produced.
+3. **Whisper on the GPU as an optional extra.** The evidence for the NVIDIA cuBLAS 12 wheel is
+   shown first. Nothing is added until the user approves it. If approved: exact pins, an
+   optional group outside the default dependencies, `docs/licenses.md` marking it proprietary and
+   not redistributed, and a `gpu_budget.py` run with Whisper on the GPU and the standard tier.
+4. **The latency run** waits for the user to say `GATEWAY_API_KEY` is set and the gateway is
+   running. Then `scripts/measure_latency.py` gets three measured runs (warm-up excluded) with
+   Whisper on the CPU, and on the GPU if item 3 is done, each labelled one machine. Until then
+   `docs/latency.md` stays empty.
