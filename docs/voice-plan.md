@@ -5,8 +5,7 @@ A push-to-talk voice receptionist for a **mock** clinic. It calls the
 over HTTP. This is a demo for synthetic data and is not HIPAA compliant. The rules it is built
 under are in `CLAUDE.md`.
 
-Status: **waiting for approval**. Step 1 touches audio, a network client and model downloads,
-so nothing is built until this plan is approved.
+Status: **approved 2026-10-26**, with the answers in "Decisions (answered)" below.
 
 ## Step 1: scaffold and a push-to-talk loop with stage timing
 
@@ -17,8 +16,12 @@ Branch `voice/step-1-scaffold`, one draft PR against `main`.
 This repo holds the earlier multi-tenant chatbot (`backend/`, `frontend/`, `config/`,
 `scripts/demo.ps1`, `docs/DEMO.md`, `docs/DESIGN.md`, `docs/img/chat.png`) and its CI. Its own
 repo, `bala5071/inference-gateway-chat`, keeps the original. One ordinary commit removes those
-files. The commit does not rewrite history, so `git log` keeps them. `LICENSE` (MIT) and
-`.gitattributes` stay.
+files. The commit does not rewrite history, so `git log` keeps them. `.gitattributes` stays.
+`LICENSE` becomes GPL-3.0 (decision 1).
+
+Before any push, the whole history (every blob, path and commit message on every ref) is
+scanned for secrets, with a planted control that must be found. If anything is found, work
+stops and the repo starts again with fresh history after the secret is rotated.
 
 ### 2. Layout
 
@@ -26,7 +29,8 @@ files. The commit does not rewrite history, so `git log` keeps them. `LICENSE` (
 pyproject.toml            uv project, ruff (with the banned-api rules), mypy strict, pytest
 uv.lock
 src/voice_agent/          the modules listed in CLAUDE.md
-src/voice_agent/clinic.yaml   mock clinic facts (visibly fake names, a 555 number)
+src/voice_agent/clinic.toml   mock clinic facts (visibly fake names, a 555 number); TOML
+                          because tomllib is in the standard library, so no YAML dependency
 tests/                    fakes and FakeClock only; real_models tests skipped by default
 scripts/check_characters.py   tracked code is printable ASCII (as in the gateway)
 scripts/gpu_budget.py     Whisper + the voice tier on the GPU together
@@ -105,16 +109,21 @@ On the emergency path the gateway stages are recorded as absent, never as zero.
 
 ### 6. scripts/gpu_budget.py
 
-1. Load Whisper with the chosen size and compute type on CUDA.
-2. Load the voice tier in Ollama with `POST http://127.0.0.1:11434/api/generate`, an empty
-   prompt and a `keep_alive`. This talks to Ollama directly, not through the gateway, because
-   it measures memory, not the gateway.
-3. Read `nvidia-smi --query-gpu=memory.used,memory.total` before, after Whisper, and after
-   both. Read `ollama ps` for how much of the model Ollama put on the GPU.
-4. Fail with a clear message (non-zero exit) if `memory.used` comes within a set headroom of
-   `memory.total`, or if Ollama reports the model partly on CPU.
-5. Print the hardware (GPU name, driver, total memory) and the numbers as JSON, so
-   `docs/latency.md` can quote them with the command and commit.
+1. Before loading anything, record GPU memory already in use (by other processes) with
+   `nvidia-smi`, and which models Ollama already has loaded (`/api/ps`).
+2. Load Whisper with the chosen size and compute type on CUDA, and run one transcription of
+   synthetic audio so its working buffers are allocated.
+3. For each tier in turn (economy, standard, premium), load it in Ollama with
+   `POST http://127.0.0.1:11434/api/generate` and a short prompt, with Whisper still loaded.
+   This talks to Ollama directly, not through the gateway, because it measures memory, not the
+   gateway. Peak memory is sampled throughout by `nvidia-smi -lms 100` running beside the
+   load. `/api/ps` gives how much of the model Ollama put in VRAM. The script then unloads
+   only the model it loaded (`keep_alive: 0`).
+4. A tier fits if Ollama put all of it in VRAM and the peak stays below total minus a headroom
+   (default 512 MiB). The script prints which tiers fit and which do not, and exits non-zero
+   with a clear message if the chosen voice tier does not fit.
+5. It prints the hardware and the numbers as JSON, labelled "one machine, one run", so the
+   docs can quote them with the command and commit.
 
 **Voice tier on this machine.** The GPU is an NVIDIA GeForce RTX 4060 Laptop GPU with 8188 MiB
 (read with `nvidia-smi`, 2026-10-26). Ollama already has `llama3.2:1b`, `llama3.2:3b` and
@@ -132,8 +141,9 @@ below happens.
 
 The measured run needs (a) the models downloaded (see below), (b) the gateway running with its
 real Ollama backend, and (c) a `GATEWAY_API_KEY` for an application whose plan allows the voice
-tier. (c) is a secret. I'll ask you to put it in the environment and won't read it from
-anywhere else. If any of the three is missing, the table ships empty and the PR says so.
+tier. (c) is a dedicated short-lived key (economy and standard only, small budget) that you
+export as `GATEWAY_API_KEY` yourself. It is never printed. Until you say it is set, the table
+stays empty.
 
 ### 8. Tests (fakes and FakeClock only)
 
@@ -159,40 +169,25 @@ anywhere else. If any of the three is missing, the table ships empty and the PR 
 - `real_models` tests (skipped in CI) run Whisper on Piper-generated audio and check the
   round-trip transcript.
 
-## Decisions for you
+## Decisions (answered 2026-10-26)
 
-1. **Piper is now GPL-3.0.** The maintained `piper-tts` (PyPI 1.8.0, `OHF-Voice/piper1-gpl`) is
-   GPL-3.0-or-later. The last MIT release (1.2.0, archived `rhasspy/piper`) depends on
-   `piper-phonemize`, which has no Windows wheels, so it cannot be installed on this machine.
-   Options:
-   - **(a) Recommended:** depend on `piper-tts` 1.8.0, imported only in `engines/piper.py` and
-     recorded as GPL-3.0-or-later in `docs/licenses.md`. The README says that anyone
-     distributing the combined program takes on GPL obligations. This repo's own code stays MIT.
-   - (b) Run the archived MIT Piper *executable* as a subprocess. It is not linked, but it is
-     unmaintained and is another binary download.
-   - (c) Choose another TTS. Not researched yet.
-2. **Downloads I'm asking a yes for** (sizes read from the Hugging Face API on 2026-10-26):
-
-   | What | Name | Size | License | Source |
-   |---|---|---|---|---|
-   | Whisper weights (CTranslate2) | `Systran/faster-whisper-small` | `model.bin` 483,546,902 bytes, plus config, tokenizer and vocabulary 2,665,470 bytes | MIT (conversion); upstream `openai/whisper-small` weights Apache-2.0 | huggingface.co/Systran/faster-whisper-small |
-   | Piper voice | `en_US-ljspeech-medium` | `.onnx` 63,531,379 bytes + `.onnx.json` 4,972 bytes | voice repo MIT; dataset LJ Speech, public domain | huggingface.co/rhasspy/piper-voices, `en/en_US/ljspeech/medium/` |
-
-   I picked `ljspeech` because its dataset is public domain. The commonly used `lessac` voice is
-   trained on the Blizzard 2013 Lessac corpus, which has its own license, and I could not read
-   that license page from here. Whisper `base` (145,217,532 bytes) is the fallback if `small`
-   does not fit beside the tier. The models go in a git-ignored `models/` folder, never into
-   the default Hugging Face cache. The Python packages (faster-whisper 1.2.1 MIT, ctranslate2,
-   piper-tts, onnxruntime, httpx) are installed by `uv sync`, and each license is checked and
-   recorded before it is added.
+1. **Piper and the license.** The repo uses `piper-tts` 1.8.0 (GPL-3.0-or-later), imported only
+   in `engines/piper.py`. Importing GPL code into the same process makes the combined program a
+   work based on it, so anyone distributing it must do so under the GPL. Rather than ship MIT
+   code that can only be distributed under GPL terms, **this repository is licensed
+   GPL-3.0-or-later**. TTS stays behind the `TextToSpeech` interface, so another engine can
+   replace Piper. This is the reasoning behind the choice, not legal advice.
+2. **Downloads approved:** `Systran/faster-whisper-small` and `en_US-ljspeech-medium`. Each is
+   pinned to an exact Hugging Face commit, fetched over HTTPS from the official repo only, and
+   checked file by file. LFS files are checked against the published SHA-256, and small
+   non-LFS files against the published git blob id, with their SHA-256 then recorded. Both go
+   in `docs/licenses.md` with the model card's license text quoted, and they are stored in the
+   git-ignored `models/`.
 3. **CI installs the engine packages but no weights.** That way mypy and import checks cover
-   `engines/`. If the wheels make CI too slow, they move to an optional group and `engines/` is
-   type-checked against stubs.
-4. **Emergency script.** It is a fixed list of trigger phrases ("chest pain", "can't breathe",
-   "not breathing", "unconscious", "overdose", "suicide", "bleeding heavily", "911", ...),
-   matched on the normalized transcript. On a match it says one fixed sentence: "If this is an
-   emergency, hang up and call 911 now." The list is conservative and certainly incomplete,
-   and the docs say so.
+   `engines/`. If the wheels make CI too slow, they move to an optional group.
+4. **Emergency script.** It is a fixed list of trigger phrases matched on the normalized
+   transcript. On a match it says one fixed sentence: "If this is an emergency, hang up and
+   call 911 now." The list is conservative and certainly incomplete, and the docs say so.
 5. The CLI reads and writes WAV only. Push-to-talk from a microphone is not built in this step.
 
 ## Not built in step 1
