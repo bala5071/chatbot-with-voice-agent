@@ -31,6 +31,22 @@ from voice_agent.errors import (
 )
 from voice_agent.gateway_client import make_http_client
 
+HANG_GUARD_S = 5.0
+
+
+async def settle(task: asyncio.Future[list[str]]) -> list[str]:
+    """The task's result once the clock has passed its deadline.
+
+    A hang guard only, in real time: if the deadline under test were gone the task would wait
+    forever on a clock no one advances, and the test must fail rather than hang. No time the
+    test checks comes from it; those are all on the ``FakeClock``.
+    """
+    try:
+        async with asyncio.timeout(HANG_GUARD_S):
+            return await task
+    except TimeoutError:
+        raise AssertionError("still waiting after the deadline: no timeout fired") from None
+
 
 async def test_streams_the_reply_and_sends_the_right_request() -> None:
     gateway = MockGateway(events=reply_events("Hello", " there.", " Bye."))
@@ -171,7 +187,7 @@ async def test_first_token_timeout_on_the_injected_clock() -> None:
     assert not task.done()
     clock.advance(1)
     with pytest.raises(TimedOut) as caught:
-        await task
+        await settle(task)
     assert caught.value.code == "deadline"
 
 
@@ -186,7 +202,7 @@ async def test_total_timeout_applies_after_the_first_token() -> None:
     assert not task.done()
     clock.advance(TOTAL_MS - FIRST_TOKEN_MS - 1)
     with pytest.raises(TimedOut):
-        await task
+        await settle(task)
 
 
 async def test_redirects_are_not_followed() -> None:
