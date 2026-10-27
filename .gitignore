@@ -6,16 +6,40 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+dist/
+build/
 
-# Node
-node_modules/
-frontend/dist/
-frontend/e2e/results/
+# Secrets: environment files never go in git (CLAUDE.md, hard rule 7)
+.env
+.env.*
+*.env
+.envrc
+
+# Audio and transcripts: never stored unless asked, and never committed (hard rule 8)
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.oga
+*.opus
+*.m4a
+*.aac
+*.webm
+*.pcm
+*.raw
+transcripts/
+
+# Model files: downloaded into models/ by scripts/fetch_models.py, never committed
+models/
+*.onnx
+*.onnx.json
+*.bin
+*.gguf
+*.safetensors
+*.pt
+*.ckpt
 
 # Editors and OS
 .vscode/
 .idea/
 .DS_Store
-
-# Logs from scripts/demo.ps1
-.run/
