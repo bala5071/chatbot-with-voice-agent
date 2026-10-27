@@ -52,7 +52,7 @@ afterwards.
 **Emergencies are scripted.** `safety.py` checks the transcript against a fixed phrase list
 before any model call. On a match the agent says one fixed sentence and the model is never
 asked (a test checks the fake chat client received no call). The list is broad and certainly
-incomplete. The system prompt also tells the model to stay a receptionist and give no medical
+incomplete; step 2 made it recall-first (`docs/02-emergency-recall.md`). The system prompt also tells the model to stay a receptionist and give no medical
 advice, but an instruction to a model is not a guarantee.
 
 **Models.** The models are faster-whisper `small` (CPU int8 by default, `--device cuda` to opt
