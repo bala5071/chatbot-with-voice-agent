@@ -293,3 +293,16 @@ decision 7 of PR #4.
 - `scripts/demo.py`: call 4 expects the scripted medical-advice path.
 - After this PR is merged and the user says the gateway is running and the key is set: one
   demo run against the real gateway, reported per call, with anything unexpected stated plainly.
+
+## Step 5: the demo explains 503 no_local_provider
+
+Branch `voice/step-5-no-local-provider`, from `main` after PR #5 (`d8b4655`), one draft PR against
+`main`. Requested 2026-10-27, after a demo run against the gateway in Docker stopped at the
+warm-up with `Unavailable(status=503, code=no_local_provider)`.
+
+- When the warm-up fails with that code, the demo says what it means: the gateway treats the
+  model server for the requested tier as hosted (its URL is not loopback and is not listed as
+  local), and the application's mode, `local_only`, refuses hosted providers. It names the tier
+  and points to the gateway's `docs/33-fallback-modes.md`. It suggests no setting to change.
+- A test, and a mutation check that removing the case brings back the generic message.
+- Note 04 gets one line about it.
