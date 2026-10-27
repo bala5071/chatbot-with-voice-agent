@@ -314,6 +314,22 @@ def test_a_failed_warm_up_stops_with_a_clear_message(
     assert files_under(temp) == {"not-the-demos.txt"}
 
 
+def test_no_local_provider_is_explained(
+    temp: Path, workdir: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = Run(fail=Unavailable(503, "no_local_provider")).main(
+        [], temp, env={**ENV, "VOICE_MODEL": "economy"}
+    )
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "HTTP 503, no_local_provider" in err
+    assert "treats the model server for tier 'economy' as hosted" in err
+    assert "local_only, refuses hosted providers" in err
+    assert "docs/33-fallback-modes.md" in err
+    assert "warm-up request to the gateway failed" not in err
+    assert "Call 1" not in out
+
+
 @pytest.mark.parametrize("fail", [None, NotAuthorized(401, "invalid_api_key")])
 def test_the_key_is_never_printed_or_logged(
     fail: SpokenError | None,
