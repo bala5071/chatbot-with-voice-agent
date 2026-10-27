@@ -24,7 +24,7 @@ from voice_agent.config import Settings
 from voice_agent.errors import NotAuthorized, SpokenError, Unavailable
 from voice_agent.fakes import Delta, FakeChatClient, FakeTextToSpeech
 from voice_agent.pipeline import WARM_UP_TEXT
-from voice_agent.safety import is_emergency
+from voice_agent.safety import MEDICAL_ADVICE_TEXT, is_emergency, is_medical_advice_request
 
 ENV = {"GATEWAY_API_KEY": PLANTED_KEY}
 REPLY = "We open at 9 a.m. on Saturday."
@@ -127,7 +127,13 @@ def test_each_call_takes_its_path(temp: Path, workdir: Path) -> None:
     code, out = Run().main([], temp)
     assert code == 0
     paths = [call_block(out, i).split("path:")[1].splitlines()[0].strip() for i in range(1, 6)]
-    assert paths == ["model", "model", "scripted emergency", "model", "scripted no-speech"]
+    assert paths == [
+        "model",
+        "model",
+        "scripted emergency",
+        "scripted medical-advice",
+        "scripted no-speech",
+    ]
     assert "expected" not in out
 
 
@@ -162,9 +168,23 @@ def test_the_emergency_call_never_reaches_the_model(temp: Path, workdir: Path) -
     assert is_emergency(emergency)
     assert run.chat is not None
     sent = [m.content for messages in run.chat.calls for m in messages if m.role == "user"]
-    assert len(sent) == 1 + 3  # the warm-up, then the three calls that go to the model
+    assert len(sent) == 1 + 2  # the warm-up, then the two calls that go to the model
     assert emergency not in sent
     assert not any(is_emergency(text) for text in sent)
+
+
+def test_the_medical_advice_call_never_reaches_the_model(temp: Path, workdir: Path) -> None:
+    run = Run()
+    code, out = run.main([], temp)
+    assert code == 0
+    question = CALLS[3].text
+    assert question is not None
+    assert is_medical_advice_request(question)
+    assert run.chat is not None
+    sent = [m.content for messages in run.chat.calls for m in messages if m.role == "user"]
+    assert question not in sent
+    assert not any(is_medical_advice_request(text) for text in sent)
+    assert f"reply:      {MEDICAL_ADVICE_TEXT!r}" in call_block(out, 4)
 
 
 def test_the_summary_has_the_range_hardware_tier_and_label(temp: Path, workdir: Path) -> None:
@@ -175,7 +195,7 @@ def test_the_summary_has_the_range_hardware_tier_and_label(temp: Path, workdir: 
         if line.split() and line.split()[0] in {"first_token", "first_audio_byte"}
     }
     assert rows == {
-        "first_token": ["400.0", "400.0", "3"],
+        "first_token": ["400.0", "400.0", "2"],
         "first_audio_byte": ["310.0", "460.0", "5"],
     }
     assert "  cpu: test cpu" in out

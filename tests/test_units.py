@@ -21,7 +21,10 @@ from voice_agent.errors import (
 from voice_agent.safety import (
     EMERGENCY_FAMILIES,
     EMERGENCY_PHRASES,
+    MEDICAL_FAMILIES,
+    MEDICAL_PHRASES,
     is_emergency,
+    is_medical_advice_request,
     normalize,
 )
 from voice_agent.sentences import SentenceSplitter
@@ -183,6 +186,146 @@ def test_every_family_has_an_example_that_triggers() -> None:
 )
 def test_normalize_forgives_spelling(raw: str, normalized: str) -> None:
     assert normalize(raw) == normalized
+
+
+# --- medical advice --------------------------------------------------------------------------
+
+# The three asked for in step 4 must never trigger.
+REQUESTED_NOT_MEDICAL = (
+    "Do you take insurance?",
+    "Can I take the 3pm slot?",
+    "Is the clinic open on Saturday?",
+)
+
+
+@pytest.mark.parametrize("text", REQUESTED_NOT_MEDICAL)
+def test_requested_ordinary_requests_are_not_medical_advice(text: str) -> None:
+    assert not is_medical_advice_request(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # dosage
+        "What dose of ibuprofen should I take?",
+        "How much Tylenol can I give my son?",
+        "how many should I take",
+        "How often should I take my antibiotics?",
+        "Is 400mg too much?",
+        "is 400 mg ok",
+        "can I double my dose",
+        "What's the dosage for children's Motrin?",
+        # medication
+        "Is it safe to take aspirin with my other pills?",
+        "Should I stop taking it?",
+        "What can I take for a headache?",
+        "What should I give her to help with the fever?",
+        "What are the side effects of amoxicillin?",
+        "Can I give paracetamol to a two year old?",
+        "What medication is best for allergies?",
+        # diagnosis
+        "Can you diagnose this over the phone?",
+        "I have these symptoms, what is wrong with me?",
+        "Could it be an infection?",
+        "Might this be the flu?",
+        "Should I be worried about this lump?",
+        "Is it contagious?",
+        "Do I need antibiotics?",
+        "Does my daughter need stitches?",
+        "I need some medical advice.",
+        # treatment
+        "What should I do about my rash?",
+        "How do I treat a sprained ankle?",
+        "Is there a cure for this?",
+        "Any home remedies for a cough?",
+        "How do I get rid of a sore throat?",
+        # spelled the way a transcript might
+        "WHAT DOSE SHOULD I TAKE",
+        "what\u2019s the right dosage",
+    ],
+)
+def test_medical_advice_requests_are_detected(text: str) -> None:
+    assert is_medical_advice_request(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Hi, what time do you open on Saturday?",
+        "Which services does the clinic offer?",
+        "I'd like to book a check-up for next week.",
+        "Do you take new patients?",
+        "Can I take my son to his sports physical on Saturday?",
+        "Is Dr. Sample in on Monday?",
+        "Where are you located?",
+        "Do you offer vaccinations?",
+        "Can I reschedule my appointment to 3 pm?",
+        "How much does a check-up cost?",
+        "How many appointments are left this week?",
+        "What should I bring to my appointment?",
+        "Can I book a travel consultation?",
+        "Is there parking at the clinic?",
+        "Is it ok to come in early?",
+        "Who is the nurse practitioner?",
+        "Can I have the 9:11 slot on Tuesday?",
+        "What should I do if I'm running late?",
+        "How long does a check-up take?",
+        "My phone number is 555-0199.",
+    ],
+)
+def test_ordinary_requests_are_not_medical_advice(text: str) -> None:
+    assert not is_medical_advice_request(text)
+
+
+def test_every_medical_phrase_triggers_on_its_own() -> None:
+    assert all(is_medical_advice_request(f"well, {p}, please") for p in MEDICAL_PHRASES)
+
+
+MEDICAL_FAMILY_EXAMPLES = {
+    "how much to take": "how much of it can my husband take",
+    "how often to take": "how often should she take them",
+    "an amount": "is 20 ml right",
+    "safe to take": "is it safe to give both",
+    "taking": "I have been taking it for a week",
+    "what to take for": "what can we use for a burn",
+    "what to do about": "what should I do about this cough",
+    "could it be": "could this be strep",
+    "do I need": "does he need an x-ray",
+}
+
+
+def test_every_medical_family_has_an_example_that_triggers() -> None:
+    assert set(MEDICAL_FAMILY_EXAMPLES) == set(MEDICAL_FAMILIES)
+    for example in MEDICAL_FAMILY_EXAMPLES.values():
+        assert is_medical_advice_request(example), example
+
+
+# Accepted on purpose (recall first): each gets the scripted sentence, which offers an
+# appointment or a callback. Listed so the trade-off stays visible.
+KNOWN_FALSE_ALARMS = (
+    "Do you treat children?",
+    "Can I get a refill of my inhaler prescription?",
+    "I'd like an appointment about my symptoms.",
+)
+
+
+@pytest.mark.parametrize("text", KNOWN_FALSE_ALARMS)
+def test_known_false_alarms_trigger(text: str) -> None:
+    assert is_medical_advice_request(text)
+
+
+# Known misses: keyword matching cannot see these (docs/threat-model.md). They go to the model,
+# which is told to give no advice. If one starts to trigger, move it to the detected list.
+KNOWN_MISSES = (
+    "Is Calpol okay for a fever?",
+    "Will a hot bath help my back?",
+    "My ear has been ringing for a week, is that bad?",
+)
+
+
+@pytest.mark.parametrize("text", KNOWN_MISSES)
+def test_known_misses_are_documented(text: str) -> None:
+    assert not is_medical_advice_request(text)
 
 
 # --- clinic: mock data only ------------------------------------------------------------------

@@ -9,7 +9,8 @@ added by the step that changes them.
 - **The gateway API key** (`GATEWAY_API_KEY`), the only secret the agent holds.
 - **What the caller says and hears**: the audio, the transcript, and the reply. In this demo
   they are synthetic, but the code treats them as if they were not.
-- **The caller's safety**: an emergency must get the scripted answer, never a generated one.
+- **The caller's safety**: an emergency must get the scripted answer, never a generated one,
+  and a request for medical advice must not get a generated answer either.
 
 ## Threats and what stands against them
 
@@ -23,7 +24,7 @@ added by the step that changes them.
 | A tampered model download | HTTPS from Hugging Face only, the host checked on every redirect, an exact revision, and every file's hash checked before it is kept | `test_downloads_only_over_https_from_hugging_face`, `test_a_hash_or_size_mismatch_is_refused` |
 | A key in a recorded gateway fixture | The recorder refuses to write a fixture containing the key or anything shaped like a key, and a test scans every fixture again | `tests/test_gateway_fixtures.py` (with a planted control) |
 | A generated answer to an emergency | `safety.py` checks the transcript before any model call; on a match the caller hears fixed text and the model is never asked | `test_emergency_is_scripted_and_the_model_is_never_called` |
-| Medical advice from the model | The system prompt keeps the model to receptionist tasks | None. An instruction to a model is not a guarantee |
+| Medical advice from the model | `safety.py` checks the transcript for dosage, medication, diagnosis and treatment wording before any model call; on a match the caller hears fixed text offering an appointment or a callback, and the model is never asked. The system prompt also forbids advice, which is a second layer, not a guarantee | `test_medical_advice_is_scripted_and_the_model_is_never_called`, `test_the_medical_advice_call_never_reaches_the_model`, `test_medical_advice_requests_are_detected` |
 
 ## Known gaps
 
@@ -40,5 +41,17 @@ added by the step that changes them.
 - **False alarms are accepted on purpose.** "My daughter is bleeding" triggers even when the
   caller only wants an appointment. The caller hears one scripted sentence, the model is not
   asked, and the caller has to repeat the request.
+- **The medical-advice guard is keyword-based and will miss unusual phrasing.** It matches
+  words and a few wording families, not meaning. A request phrased without any of them
+  ("Is Calpol okay for a fever?", "Will a hot bath help my back?") goes to the model, and
+  then the system prompt is the only safeguard. These misses are listed in
+  `tests/test_units.py` (`KNOWN_MISSES`). Like the emergency check, it sees only the
+  transcript, so a mis-transcribed request is missed too, and it knows English only.
+- **Medical-advice false alarms are accepted on purpose.** "Do you treat children?" and a
+  prescription refill both get the scripted sentence (`KNOWN_FALSE_ALARMS`). The caller is
+  offered an appointment or a callback and has to ask again to reach the model.
+- **The offer of an appointment or a callback is only words.** The agent books nothing and
+  schedules no callback; the caller's next turn goes to the model, which can only take the
+  details and say the front desk will call back (`clinic.toml`).
 - **A small model can still say something wrong** in an ordinary reply. This is a demo for
   synthetic data, and the README says so.
