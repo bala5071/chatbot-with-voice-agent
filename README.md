@@ -56,9 +56,14 @@ uv run python -m voice_agent --in question.wav --out reply.wav --timings
 ```
 
 The input must be a mono 16-bit WAV file. Use synthetic speech (for example, generated with
-Piper), never a recording of a real person. Options: `--device cuda` (Whisper on the GPU),
-`--compute-type`, `--whisper-dir`, `--voice`, `--show-text`. `VOICE_MODEL` picks the gateway
-model id (default `standard`).
+Piper), never a recording of a real person. Options: `--compute-type`, `--whisper-dir`,
+`--voice`, `--show-text`. `VOICE_MODEL` picks the gateway model id (default `standard`).
+
+**Whisper runs on the CPU.** Running it on an NVIDIA GPU needs NVIDIA's cuBLAS 12, which this
+repository does not install: its license forbids use that would subject it to an open-source
+license such as this repository's GPL, and excludes medical uses without an agreement with
+NVIDIA (`docs/licenses.md` quotes both clauses). This is not legal advice. `--device cuda` is
+left for anyone who installs cuBLAS 12 themselves; nothing here is measured with it.
 
 ## Measurements
 
