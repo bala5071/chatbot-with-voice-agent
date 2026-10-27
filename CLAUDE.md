@@ -44,7 +44,10 @@ Modules under `src/voice_agent/` (added step by step):
 - `cli.py` — `python -m voice_agent`: audio file in, audio file out.
 
 Outside the package: `models.toml` (pinned model files and hashes), `scripts/fetch_models.py`,
-`scripts/gpu_budget.py`, `scripts/measure_latency.py`, `scripts/check_characters.py`.
+`scripts/gpu_budget.py`, `scripts/measure_latency.py`, `scripts/check_characters.py`, and
+`scripts/record_fixtures.py` (the real gateway's answers to fixed synthetic prompts, kept in
+`tests/fixtures/gateway/` with the command and gateway commit, refused if anything in them is
+shaped like a key). Never edit a fixture by hand; record it again.
 
 Rules:
 

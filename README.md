@@ -17,10 +17,12 @@ audio out. It records six stage times on an injected clock (`speech_end`,
 Microphone capture, telephony and multi-turn calls are not built yet. See
 `docs/voice-plan.md`.
 
-- **Emergencies are scripted, not generated.** If the transcript matches a fixed list of
-  emergency phrases, the agent says "If this is an emergency, hang up and call 911 now." and
-  never asks the model. The list is broad but certainly incomplete: this is a demo safeguard,
-  not a triage system.
+- **Emergencies are scripted, not generated.** If the transcript matches the emergency
+  phrases, the agent says "If this is an emergency, hang up and call 911 now." and never asks
+  the model. Matching is recall-first: it forgives how a transcript spells things (`cant`,
+  `9-1-1`) and accepts false alarms (`docs/02-emergency-recall.md`). It reads only the
+  transcript, so an emergency that speech-to-text mishears is missed. This is a known gap
+  (`docs/threat-model.md`): it is a demo safeguard, not a triage system.
 - **No medical advice.** The model is told to answer only receptionist questions. An
   instruction to a model is not a guarantee.
 - **Nothing is stored by default.** The only file written is the `--out` file you ask for. The

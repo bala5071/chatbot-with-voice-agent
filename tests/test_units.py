@@ -18,7 +18,12 @@ from voice_agent.errors import (
     error_for_status,
     error_for_stream_code,
 )
-from voice_agent.safety import EMERGENCY_PHRASES, is_emergency
+from voice_agent.safety import (
+    EMERGENCY_FAMILIES,
+    EMERGENCY_PHRASES,
+    is_emergency,
+    normalize,
+)
 from voice_agent.sentences import SentenceSplitter
 from voice_agent.timing import Stage, StageTimer
 
@@ -79,19 +84,48 @@ def test_line_breaks_end_a_sentence() -> None:
 
 # --- safety --------------------------------------------------------------------------------
 
+# How a transcript might spell an emergency. The first eight are the variants asked for in
+# step 2; each must trigger on its own, inside an ordinary sentence.
+REQUESTED_VARIANTS = (
+    "nine one one",
+    "9-1-1",
+    "can not breathe",
+    "cant breathe",
+    "chest pain",
+    "overdose",
+    "not breathing",
+    "bleeding badly",
+)
+
+
+@pytest.mark.parametrize("variant", REQUESTED_VARIANTS)
+def test_requested_transcript_variants_trigger(variant: str) -> None:
+    assert is_emergency(f"Hello, um, {variant}, please help")
+
 
 @pytest.mark.parametrize(
     "text",
     [
         "I have chest pain",
         "My son CAN'T BREATHE!",
+        "my husband can\u2019t breathe",
+        "she can barely breathe",
+        "he's short of breath",
+        "my chest really hurts",
+        "there's pressure in my chest",
         "she is unconscious",
         "I think I took an overdose",
+        "he took too many pills",
+        "she swallowed a whole bottle of sleeping pills",
         "Call 911",
+        "call 9 1 1",
+        "call 9.1.1 now",
+        "Call nine-one-one!",
         "this is an emergency",
         "I want to kill myself",
         "he's bleeding heavily",
-        "my husband can\u2019t breathe",
+        "it won't stop bleeding",
+        "my throat is closing",
     ],
 )
 def test_emergencies_are_detected(text: str) -> None:
@@ -107,6 +141,11 @@ def test_emergencies_are_detected(text: str) -> None:
         "Is Dr. Sample in on Monday?",
         "chestnut street parking",
         "9110 Example Lane",
+        "Can I have the 9:11 slot on Tuesday?",
+        "I need to reschedule my chest x-ray.",
+        "Can I get a refill of my inhaler prescription?",
+        "Do you take new patients?",
+        "My phone number is 555-0199.",
     ],
 )
 def test_ordinary_requests_are_not_emergencies(text: str) -> None:
@@ -115,6 +154,35 @@ def test_ordinary_requests_are_not_emergencies(text: str) -> None:
 
 def test_every_phrase_triggers_on_its_own() -> None:
     assert all(is_emergency(f"well, {p}, please") for p in EMERGENCY_PHRASES)
+
+
+FAMILY_EXAMPLES = {
+    "breathing": "he could not catch his breath",
+    "chest pain": "a tightness in her chest",
+    "bleeding": "my daughter is bleeding",
+    "too many pills": "he took lots of tablets",
+}
+
+
+def test_every_family_has_an_example_that_triggers() -> None:
+    assert set(FAMILY_EXAMPLES) == set(EMERGENCY_FAMILIES)
+    for example in FAMILY_EXAMPLES.values():
+        assert is_emergency(example), example
+
+
+@pytest.mark.parametrize(
+    ("raw", "normalized"),
+    [
+        ("Can't BREATHE!", "cant breathe"),
+        ("can\u2019t", "cant"),
+        ("9-1-1", "911"),
+        ("9 / 1 / 1", "911"),
+        ("at 9:11", "at 9 11"),
+        ("9110 Example Lane", "9110 example lane"),
+    ],
+)
+def test_normalize_forgives_spelling(raw: str, normalized: str) -> None:
+    assert normalize(raw) == normalized
 
 
 # --- clinic: mock data only ------------------------------------------------------------------
