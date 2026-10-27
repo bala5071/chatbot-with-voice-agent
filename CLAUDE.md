@@ -37,7 +37,8 @@ Modules under `src/voice_agent/` (added step by step):
 - `gateway_client.py` — `GatewayClient`: the streamed `POST /v1/chat/completions`, timeouts on
   the injected clock.
 - `sentences.py` — splits a streamed reply into sentences for TTS.
-- `safety.py` — the scripted emergency detector and its fixed response.
+- `safety.py` — the scripted emergency and medical-advice detectors (recall-first keyword
+  matching on the normalized transcript, emergency first) and their fixed responses.
 - `clinic.py` + `clinic.toml` — the mock clinic's facts and the system prompt.
 - `timing.py` — `Stage`, `StageTimer`: the six stage timestamps on the injected clock.
 - `pipeline.py` — `Pipeline`: warm-up and one push-to-talk turn.

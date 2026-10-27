@@ -23,8 +23,17 @@ Microphone capture, telephony and multi-turn calls are not built yet. See
   `9-1-1`) and accepts false alarms (`docs/02-emergency-recall.md`). It reads only the
   transcript, so an emergency that speech-to-text mishears is missed. This is a known gap
   (`docs/threat-model.md`): it is a demo safeguard, not a triage system.
-- **No medical advice.** The model is told to answer only receptionist questions. An
-  instruction to a model is not a guarantee.
+- **Requests for medical advice are scripted too.** If the transcript asks about a dose, a
+  medicine, a diagnosis or a treatment, the agent says "I'm sorry, I can't give medical
+  advice on this line, but one of our clinicians can. Would you like to book an appointment,
+  or have a clinician call you back?" and never asks the model
+  (`docs/05-medical-advice-guard.md`). The check is keyword-based and recall-first: it accepts
+  false alarms and will miss unusual phrasing. When it misses, the model is told to answer
+  only receptionist questions, and an instruction to a model is not a guarantee. The medicine
+  names in the list are a sample, not a complete list: a medicine it does not name, asked about
+  without any other trigger word, goes to the model. Some ordinary questions, such as "Do you
+  treat children?", also get the scripted decline, and its offer of an appointment or a
+  callback is only words: the agent books nothing and schedules no callback.
 - **Nothing is stored by default.** The only file written is the `--out` file you ask for. The
   transcript and reply are printed only with `--show-text` and never logged.
 - **Failures are spoken in fixed words.** For example, a 429 from the gateway becomes "We're
@@ -78,12 +87,11 @@ medical advice ("What dose of ibuprofen should I take?") and near-silence. The c
 is synthesized by Piper (near-silence is a quiet generated tone) into a temporary folder, and
 that folder is deleted at the end.
 
-Per call it prints the transcript, the reply, which path ran (the model, the scripted
-emergency or the scripted no-speech answer) and the stage times; then the min and max of each
-stage, the hardware and the tier asked for. The emergency call never reaches the model. The
-medical-advice call does: the system prompt tells the model to stay a receptionist, which is
-not a guarantee, and the demo shows what it says. Every stage is warmed up first and the
-warm-up is not counted. These are single demo runs on one machine, not a benchmark.
+Per call it prints the transcript, the reply, which path ran (the model, or the scripted
+emergency, medical-advice or no-speech answer) and the stage times; then the min and max of
+each stage, the hardware and the tier asked for. Neither the emergency call nor the
+medical-advice call reaches the model. Every stage is warmed up first and the warm-up is not
+counted. These are single demo runs on one machine, not a benchmark.
 
 `--play` plays each reply with the OS player; `--out DIR` writes each reply WAV and its
 transcript there. Without them nothing is written. A missing key, or a gateway that cannot be

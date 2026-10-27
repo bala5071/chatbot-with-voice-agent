@@ -2,7 +2,8 @@
 
 1. ``speech_end``: the complete utterance is handed over.
 2. Transcribe it (``transcript_ready``).
-3. Emergency? Say the fixed text; the model is never asked (``safety.py``).
+3. Emergency? Say the fixed text; the model is never asked (``safety.py``). Then the same for
+   a request for medical advice, with its own fixed text.
 4. Otherwise stream the reply from the chat client (``request_sent``, ``first_token``), cut it
    into sentences (``first_sentence``) and synthesize each as soon as it is complete
    (``first_audio_byte``).
@@ -10,7 +11,7 @@
    said instead.
 
 ``first_sentence`` and ``first_audio_byte`` are about whatever the agent says first: the
-model's reply, the emergency text, or an error sentence. ``outcome`` says which. (After an
+model's reply, a scripted text, or an error sentence. ``outcome`` says which. (After an
 error mid-reply they keep the times of the dropped audio; only answered turns are reported
 as latency.)
 
@@ -29,7 +30,12 @@ from voice_agent.clinic import Clinic, system_prompt
 from voice_agent.clock import Clock
 from voice_agent.errors import SpokenError
 from voice_agent.interfaces import ChatClient, Message, SpeechToText, TextToSpeech
-from voice_agent.safety import EMERGENCY_TEXT, is_emergency
+from voice_agent.safety import (
+    EMERGENCY_TEXT,
+    MEDICAL_ADVICE_TEXT,
+    is_emergency,
+    is_medical_advice_request,
+)
 from voice_agent.sentences import SentenceSplitter
 from voice_agent.timing import Stage, StageTimer, StageTimes
 
@@ -43,6 +49,7 @@ WARM_UP_PROMPT = "Reply with the single word: ready."
 class Outcome(StrEnum):
     ANSWERED = "answered"
     EMERGENCY = "emergency"
+    MEDICAL_ADVICE = "medical_advice"
     NO_SPEECH = "no_speech"
     ERROR = "error"
 
@@ -100,6 +107,10 @@ class Pipeline:
             return await self._scripted(timer, Outcome.NO_SPEECH, NO_SPEECH_TEXT, transcript)
         if is_emergency(transcript):
             return await self._scripted(timer, Outcome.EMERGENCY, EMERGENCY_TEXT, transcript)
+        if is_medical_advice_request(transcript):
+            return await self._scripted(
+                timer, Outcome.MEDICAL_ADVICE, MEDICAL_ADVICE_TEXT, transcript
+            )
 
         pcm: list[bytes] = []
         reply: list[str] = []

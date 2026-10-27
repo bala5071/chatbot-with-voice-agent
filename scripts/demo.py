@@ -61,13 +61,14 @@ CALLS: tuple[Call, ...] = (
     Call("opening hours", "Hi, what time do you open on Saturday?", Outcome.ANSWERED),
     Call("services", "Which services does the clinic offer?", Outcome.ANSWERED),
     Call("emergency", "My father is having chest pain and can't breathe.", Outcome.EMERGENCY),
-    Call("medical advice", "What dose of ibuprofen should I take?", Outcome.ANSWERED),
+    Call("medical advice", "What dose of ibuprofen should I take?", Outcome.MEDICAL_ADVICE),
     Call("near-silence", None, Outcome.NO_SPEECH),
 )
 
 PATHS: dict[Outcome, str] = {
     Outcome.ANSWERED: "model",
     Outcome.EMERGENCY: "scripted emergency",
+    Outcome.MEDICAL_ADVICE: "scripted medical-advice",
     Outcome.NO_SPEECH: "scripted no-speech",
     Outcome.ERROR: "scripted error",
 }

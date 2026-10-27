@@ -10,7 +10,7 @@ from voice_agent.clock import FakeClock
 from voice_agent.errors import Busy, TimedOut
 from voice_agent.fakes import Delta, FakeChatClient, FakeSpeechToText, FakeTextToSpeech, tone
 from voice_agent.pipeline import NO_SPEECH_TEXT, Outcome, Pipeline
-from voice_agent.safety import EMERGENCY_TEXT
+from voice_agent.safety import EMERGENCY_TEXT, MEDICAL_ADVICE_TEXT
 from voice_agent.timing import Stage
 
 UTTERANCE = Audio(tone(500, 16_000), 16_000)
@@ -87,6 +87,28 @@ async def test_emergency_is_scripted_and_the_model_is_never_called() -> None:
     assert result.times[Stage.FIRST_TOKEN] is None
     assert result.times[Stage.FIRST_SENTENCE] == 300.0
     assert result.times[Stage.FIRST_AUDIO_BYTE] == 370.0
+
+
+async def test_medical_advice_is_scripted_and_the_model_is_never_called() -> None:
+    clock = FakeClock()
+    pipeline, chat, tts = build(clock, transcript="What dose of ibuprofen should I take?")
+    result = await pipeline.turn(UTTERANCE)
+    assert result.outcome is Outcome.MEDICAL_ADVICE
+    assert chat.calls == []
+    assert tts.spoken == [MEDICAL_ADVICE_TEXT]
+    assert result.reply == MEDICAL_ADVICE_TEXT
+    assert result.times[Stage.REQUEST_SENT] is None
+    assert result.times[Stage.FIRST_TOKEN] is None
+    assert result.times[Stage.FIRST_AUDIO_BYTE] == 370.0
+
+
+async def test_an_emergency_that_also_asks_about_medicine_gets_the_emergency_text() -> None:
+    clock = FakeClock()
+    pipeline, chat, tts = build(clock, transcript="He took too many pills, what dose is safe?")
+    result = await pipeline.turn(UTTERANCE)
+    assert result.outcome is Outcome.EMERGENCY
+    assert chat.calls == []
+    assert tts.spoken == [EMERGENCY_TEXT]
 
 
 async def test_no_speech_asks_again_without_calling_the_model() -> None:
