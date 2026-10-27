@@ -65,6 +65,31 @@ license such as this repository's GPL, and excludes medical uses without an agre
 NVIDIA (`docs/licenses.md` quotes both clauses). This is not legal advice. `--device cuda` is
 left for anyone who installs cuBLAS 12 themselves; nothing here is measured with it.
 
+## Run the demo
+
+```sh
+export GATEWAY_API_KEY=...                   # yourself; never printed
+uv run python scripts/demo.py                # add --play to hear the replies
+```
+
+Five fixed calls to the mock clinic, through the real pipeline and the gateway: opening hours,
+the services, an emergency ("My father is having chest pain and can't breathe."), a request for
+medical advice ("What dose of ibuprofen should I take?") and near-silence. The callers' speech
+is synthesized by Piper (near-silence is a quiet generated tone) into a temporary folder, and
+that folder is deleted at the end.
+
+Per call it prints the transcript, the reply, which path ran (the model, the scripted
+emergency or the scripted no-speech answer) and the stage times; then the min and max of each
+stage, the hardware and the tier asked for. The emergency call never reaches the model. The
+medical-advice call does: the system prompt tells the model to stay a receptionist, which is
+not a guarantee, and the demo shows what it says. Every stage is warmed up first and the
+warm-up is not counted. These are single demo runs on one machine, not a benchmark.
+
+`--play` plays each reply with the OS player; `--out DIR` writes each reply WAV and its
+transcript there. Without them nothing is written. A missing key, or a gateway that cannot be
+reached or refuses the key, stops the demo with a message (exit 2). Exit 1 means a call took a
+different path than expected; the output says which.
+
 ## Measurements
 
 - `docs/latency.md`: the stage-time table. **Empty until a measured run fills it.**
