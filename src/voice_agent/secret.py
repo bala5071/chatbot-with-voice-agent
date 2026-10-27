@@ -3,6 +3,8 @@
 ``repr``, ``str`` and ``format`` give ``********``; it cannot be pickled or copied into a
 dict of attributes. ``reveal()`` returns the value and is called in one place only, where the
 ``Authorization`` header is built (``gateway_client._auth_headers``; an AST test checks it).
+``found_in(text)`` says whether some text contains the value, for leak checks (the fixture
+recorder), without returning it.
 """
 
 from __future__ import annotations
@@ -23,6 +25,10 @@ class Secret:
 
     def reveal(self) -> str:
         return str(object.__getattribute__(self, "_value"))
+
+    def found_in(self, text: str) -> bool:
+        """Whether ``text`` contains the value, for leak checks that must not reveal it."""
+        return str(object.__getattribute__(self, "_value")) in text
 
     def __repr__(self) -> str:
         return f"Secret({REDACTED!r})"
